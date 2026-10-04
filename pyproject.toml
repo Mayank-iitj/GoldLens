@@ -5,7 +5,7 @@ description = "Carry-adjusted relative-value analytics on MCX gold futures"
 authors = ["AI <ai@example.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.13"
+python = ">=3.11,<3.15"
 pandas = "^2.2.0"
 numpy = "^1.26.0"
 scipy = "^1.11.0"
