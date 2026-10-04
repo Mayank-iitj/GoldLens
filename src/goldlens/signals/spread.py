@@ -1,5 +1,7 @@
-import pandas as pd
 import itertools
+
+import pandas as pd
+
 
 def compute_spreads(df: pd.DataFrame, target_symbols: list[str]) -> pd.DataFrame:
     """Compute naive and carry-adjusted spread for all pairs."""

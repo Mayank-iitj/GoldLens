@@ -1,8 +1,8 @@
-import httpx
-from tenacity import retry, wait_exponential, stop_after_attempt
 import logging
 from datetime import date
-from io import BytesIO
+
+import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class MCXClient:
         # MCX Bhavcopy endpoint typically uses ASPX postbacks or specific routes.
         # This mocks the network layer structure with retries as requested.
         # We assume returning CSV bytes.
-        url = f"https://www.mcxindia.com/backpage.aspx/GetDateWiseBhavCopy"
+        url = "https://www.mcxindia.com/backpage.aspx/GetDateWiseBhavCopy"
         payload = {"Date": target_date.strftime("%d/%m/%Y")}
         try:
             with httpx.Client() as client:

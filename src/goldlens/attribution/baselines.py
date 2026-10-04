@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def naive_buy_and_hold(gold_series: pd.Series) -> pd.Series:
     """Returns buy and hold PnL stream."""
     return gold_series.diff()

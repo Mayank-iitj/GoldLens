@@ -1,7 +1,9 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 from ..config import get_settings
 from ..contracts.specs import get_contract_spec
+
 
 class BacktestEngine:
     def __init__(self, data: pd.DataFrame, lifecycle: pd.DataFrame):
@@ -30,8 +32,8 @@ class BacktestEngine:
         notional2 = spec2.lot_size * spec2.base_unit
         
         lcm_val = np.lcm(int(notional1), int(notional2))
-        lots1 = lcm_val // int(notional1)
-        lots2 = lcm_val // int(notional2)
+        lcm_val // int(notional1)
+        lcm_val // int(notional2)
         
         trades = []
         position = 0

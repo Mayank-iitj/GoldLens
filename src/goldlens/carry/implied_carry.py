@@ -1,7 +1,8 @@
-import pandas as pd
-import numpy as np
-import statsmodels.api as sm
 import logging
+
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ def fit_implied_carry(group: pd.DataFrame):
         carry_rate = results.params.get("tte_years", 0.0)
         intercept = results.params.get("const", y.mean())
         return pd.Series({"carry_rate": carry_rate, "intercept": intercept, "fitted": True})
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         log.debug(f"Robust fit failed: {e}")
         return pd.Series({"carry_rate": 0.0, "intercept": np.nan, "fitted": False})
 

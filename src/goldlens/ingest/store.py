@@ -1,10 +1,13 @@
+from pathlib import Path
+
 import duckdb
 import pandas as pd
-from pathlib import Path
+
 from ..config import get_settings
 
+
 class Store:
-    def __init__(self, db_path: str = None):
+    def __init__(self, db_path: str | None = None):
         self.db_path = db_path or get_settings().database_path
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         self.conn = duckdb.connect(self.db_path)

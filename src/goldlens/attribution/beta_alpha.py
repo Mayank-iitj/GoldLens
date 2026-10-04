@@ -1,6 +1,7 @@
 import pandas as pd
 import statsmodels.api as sm
 
+
 def compute_attribution(strategy_pnl: pd.Series, gold_returns: pd.Series):
     """OLS regression to separate alpha and beta."""
     strategy_pnl = strategy_pnl.dropna()

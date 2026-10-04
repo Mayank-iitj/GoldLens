@@ -1,6 +1,7 @@
-from datetime import date
-import pandas as pd
 import logging
+from datetime import date
+
+import pandas as pd
 
 log = logging.getLogger(__name__)
 

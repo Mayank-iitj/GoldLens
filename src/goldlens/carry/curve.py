@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def build_term_structure(df: pd.DataFrame) -> pd.DataFrame:
     """Computes days to expiry."""
     if df.empty:

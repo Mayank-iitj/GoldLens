@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def block_bootstrap(series, block_size=10, n_bootstraps=1000):
     """Block bootstrap for time series to estimate confidence intervals."""
     if len(series) < block_size * 2:

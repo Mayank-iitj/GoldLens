@@ -1,5 +1,6 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 
 def calculate_metrics(pnl_series: pd.Series, risk_free_rate: float = 0.0) -> dict:
     """Standard backtest metrics."""

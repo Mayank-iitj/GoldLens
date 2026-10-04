@@ -1,7 +1,10 @@
-import pandas as pd
-from ..config import get_settings
-from pathlib import Path
 import json
+from pathlib import Path
+
+import pandas as pd
+
+from ..config import get_settings
+
 
 def get_splits(df: pd.DataFrame):
     """Splits data based on config."""

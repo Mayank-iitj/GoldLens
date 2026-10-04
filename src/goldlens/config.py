@@ -1,8 +1,8 @@
-import yaml
 from pathlib import Path
-from typing import Dict, Optional
-from pydantic_settings import BaseSettings
+
+import yaml
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
@@ -33,14 +33,14 @@ class VerdictConfig(BaseModel):
 
 class Settings(BaseSettings):
     database_path: str = str(PROJECT_ROOT / "data" / "goldlens.duckdb")
-    contracts: Dict[str, ContractSpec] = {}
+    contracts: dict[str, ContractSpec] = {}
     splits: SplitsConfig
     signal: SignalConfig
     backtest: BacktestConfig
     verdict: VerdictConfig
 
     @classmethod
-    def load(cls, config_path: Optional[Path] = None) -> "Settings":
+    def load(cls, config_path: Path | None = None) -> "Settings":
         if config_path is None:
             config_path = PROJECT_ROOT / "config" / "default.yaml"
         with open(config_path, "r") as f:
@@ -49,7 +49,7 @@ class Settings(BaseSettings):
 
 class CostConfig(BaseModel):
     rate: float
-    type: Optional[str] = None
+    type: str | None = None
 
 class SlippageConfig(BaseModel):
     k: float
@@ -65,7 +65,7 @@ class CostsSettings(BaseModel):
     slippage: SlippageConfig
 
     @classmethod
-    def load(cls, config_path: Optional[Path] = None) -> "CostsSettings":
+    def load(cls, config_path: Path | None = None) -> "CostsSettings":
         if config_path is None:
             config_path = PROJECT_ROOT / "config" / "costs.yaml"
         with open(config_path, "r") as f:

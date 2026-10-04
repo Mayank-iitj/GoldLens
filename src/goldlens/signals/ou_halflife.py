@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
+
 def compute_ou_halflife(series: pd.Series) -> float:
     """Computes Ornstein-Uhlenbeck half-life via AR(1)."""
     series = series.dropna()
@@ -21,5 +22,5 @@ def compute_ou_halflife(series: pd.Series) -> float:
             return np.nan
             
         return float(-np.log(2) / b)
-    except:
+    except Exception:  # noqa: BLE001
         return np.nan

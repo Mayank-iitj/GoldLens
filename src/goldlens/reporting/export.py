@@ -1,5 +1,7 @@
-import pandas as pd
 import json
+
+import pandas as pd
+
 
 def export_verdict_json(verdict_data: dict, filepath: str):
     """Exports verdict dictionary to JSON."""

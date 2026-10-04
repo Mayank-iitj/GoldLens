@@ -1,5 +1,6 @@
-from ..config import get_costs
 import logging
+
+from ..config import get_costs
 
 log = logging.getLogger(__name__)
 

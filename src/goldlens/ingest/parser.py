@@ -1,10 +1,10 @@
 import pandas as pd
-import numpy as np
+
 
 def parse_bhavcopy(raw_csv_bytes, allowed_symbols: list[str]) -> pd.DataFrame:
     try:
         df = pd.read_csv(raw_csv_bytes)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return pd.DataFrame()
         
     df.columns = [c.strip() for c in df.columns]

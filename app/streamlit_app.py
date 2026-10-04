@@ -1,19 +1,19 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from datetime import datetime, timedelta
 import sys
+from datetime import datetime
 from pathlib import Path
-import scipy.stats as stats
+
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+from plotly.subplots import make_subplots
 
 # Add src to path to allow real backend imports
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 try:
-    from goldlens.signals.zscore import rolling_zscore
     from goldlens.signals.ou_halflife import compute_ou_halflife
+    from goldlens.signals.zscore import rolling_zscore
     from goldlens.stats.deflated_sharpe import deflated_sharpe_ratio
 except ImportError:
     st.error("Backend algorithms not found in src/goldlens.")
@@ -55,7 +55,7 @@ with st.sidebar:
 @st.cache_data
 def run_pipeline(days=500, window=30):
     np.random.seed(42)
-    dates = pd.date_range(end=datetime.today(), periods=days)
+    dates = pd.date_range(end=datetime.now(), periods=days)  # noqa: DTZ005
     
     # 1. Normalization engine simulation
     goldm_base = 60000 + np.cumsum(np.random.normal(0, 80, days))
@@ -149,9 +149,9 @@ with t2:
         st.info("**GOLDTEN**\n- Lot: 100g\n- Purity: 999 (Adjusted down by 995/999 scalar)\n- Expiry: 31st of month")
         
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df['Date'], y=df['GOLDM_Raw'], name="GOLDM", line=dict(color="#f2a900")))
-    fig.add_trace(go.Scatter(x=df['Date'], y=df['GOLDTEN_Raw'], name="GOLDTEN (Raw)", line=dict(color="#5cb85c", dash='dot')))
-    fig.add_trace(go.Scatter(x=df['Date'], y=df['GOLDTEN_Norm'], name="GOLDTEN (Normalized)", line=dict(color="#5bc0de")))
+    fig.add_trace(go.Scatter(x=df['Date'], y=df['GOLDM_Raw'], name="GOLDM", line={"color": "#f2a900"}))
+    fig.add_trace(go.Scatter(x=df['Date'], y=df['GOLDTEN_Raw'], name="GOLDTEN (Raw)", line={"color": "#5cb85c", "dash": 'dot'}))
+    fig.add_trace(go.Scatter(x=df['Date'], y=df['GOLDTEN_Norm'], name="GOLDTEN (Normalized)", line={"color": "#5bc0de"}))
     fig.update_layout(title="Price Convergence After Normalization", template="plotly_dark", height=400)
     st.plotly_chart(fig, use_container_width=True)
 
@@ -160,9 +160,9 @@ with t3:
     st.markdown("A persistent spread exists solely because GOLDM expires ~25 days before GOLDTEN. We strip this out using an implied financing curve.")
     
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1)
-    fig.add_trace(go.Scatter(x=df['Date'], y=df['Raw_Spread'], name="Raw Spread", line=dict(color="grey")), row=1, col=1)
-    fig.add_trace(go.Scatter(x=df['Date'], y=df['Implied_Carry'], name="Modeled Carry", line=dict(color="#f2a900")), row=1, col=1)
-    fig.add_trace(go.Scatter(x=df['Date'], y=df['Adjusted_Spread'], name="Carry-Adjusted Spread", line=dict(color="#5bc0de")), row=2, col=1)
+    fig.add_trace(go.Scatter(x=df['Date'], y=df['Raw_Spread'], name="Raw Spread", line={"color": "grey"}), row=1, col=1)
+    fig.add_trace(go.Scatter(x=df['Date'], y=df['Implied_Carry'], name="Modeled Carry", line={"color": "#f2a900"}), row=1, col=1)
+    fig.add_trace(go.Scatter(x=df['Date'], y=df['Adjusted_Spread'], name="Carry-Adjusted Spread", line={"color": "#5bc0de"}), row=2, col=1)
     fig.update_layout(title="Extracting the Residual Edge", template="plotly_dark", height=600)
     st.plotly_chart(fig, use_container_width=True)
 
@@ -174,11 +174,11 @@ with t4:
     x = df['Adjusted_Spread'].shift(1).dropna()
     
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=x, y=y, mode='markers', name="Daily Change", marker=dict(color="#f2a900", size=4, opacity=0.5)))
+    fig.add_trace(go.Scatter(x=x, y=y, mode='markers', name="Daily Change", marker={"color": "#f2a900", "size": 4, "opacity": 0.5}))
     
     # Regression line
     m, b = np.polyfit(x, y, 1)
-    fig.add_trace(go.Scatter(x=x, y=m*x + b, name=f"AR(1) Fit (Beta={m:.4f})", line=dict(color="red", width=3)))
+    fig.add_trace(go.Scatter(x=x, y=m*x + b, name=f"AR(1) Fit (Beta={m:.4f})", line={"color": "red", "width": 3}))
     
     fig.update_layout(title="OU Process Calibration (Spread Level vs Daily Change)", xaxis_title="Spread(t-1)", yaxis_title="Spread(t) - Spread(t-1)", template="plotly_dark", height=450)
     st.plotly_chart(fig, use_container_width=True)
@@ -188,8 +188,8 @@ with t5:
     st.markdown("Testing the signal with strictly lagged execution and full cost friction.")
     
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df['Date'], y=df['Cum_Gross'], name="Gross PnL (No Frictions)", line=dict(color="#5cb85c", width=3)))
-    fig.add_trace(go.Scatter(x=df['Date'], y=df['Cum_Net'], name="Net PnL (After CTT & Slippage)", line=dict(color="#d9534f", width=3)))
+    fig.add_trace(go.Scatter(x=df['Date'], y=df['Cum_Gross'], name="Gross PnL (No Frictions)", line={"color": "#5cb85c", "width": 3}))
+    fig.add_trace(go.Scatter(x=df['Date'], y=df['Cum_Net'], name="Net PnL (After CTT & Slippage)", line={"color": "#d9534f", "width": 3}))
     fig.update_layout(title="Equity Curve Trajectory", template="plotly_dark", height=500)
     st.plotly_chart(fig, use_container_width=True)
     

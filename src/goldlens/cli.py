@@ -1,7 +1,8 @@
-import typer
 import logging
+
+import typer
+
 from .ingest.backfill import run_backfill
-import sys
 
 app = typer.Typer()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

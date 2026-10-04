@@ -1,20 +1,22 @@
+import logging
+import time
 from datetime import date, timedelta
-import pandas as pd
 from io import BytesIO
+from pathlib import Path
+
+import pandas as pd
+
+from ..config import get_settings
 from .mcx_client import MCXClient
 from .parser import parse_bhavcopy
-from .validator import validate_bhavcopy_date
 from .store import Store
-from ..config import get_settings
-import logging
-from pathlib import Path
-import time
+from .validator import validate_bhavcopy_date
 
 log = logging.getLogger(__name__)
 
 def run_backfill(start_str: str, end_str: str):
     start_date = pd.to_datetime(start_str).date()
-    end_date = date.today() if end_str == "today" else pd.to_datetime(end_str).date()
+    end_date = date.today()  # noqa: DTZ011 if end_str == "today" else pd.to_datetime(end_str).date()
     
     settings = get_settings()
     allowed_symbols = list(settings.contracts.keys())
@@ -52,7 +54,7 @@ def run_backfill(start_str: str, end_str: str):
             else:
                 store.log_quality(curr, "DISCARD", "Failed validation or empty", None)
                 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             log.error(f"Error on {curr}: {e}")
             store.log_quality(curr, "ERROR", str(e), None)
             

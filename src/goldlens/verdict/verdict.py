@@ -1,5 +1,6 @@
 from ..config import get_settings
 
+
 def generate_verdict(pair: str, stats: dict) -> dict:
     """Decision rule for GO/NO-GO."""
     cfg = get_settings().verdict

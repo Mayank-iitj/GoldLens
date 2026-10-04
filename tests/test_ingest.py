@@ -1,9 +1,11 @@
-import pytest
-import pandas as pd
+import io
 from datetime import date
+
+import pandas as pd
+
 from goldlens.ingest.parser import parse_bhavcopy
 from goldlens.ingest.validator import validate_bhavcopy_date
-import io
+
 
 def test_parse_bhavcopy():
     csv_data = b"Date,Symbol,InstrumentName,ExpiryDate,Open,High,Low,Close,Volume,OpenInterest\n" \

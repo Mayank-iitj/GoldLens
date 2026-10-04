@@ -1,6 +1,7 @@
 import pandas as pd
 from statsmodels.tsa.stattools import adfuller, kpss
 
+
 def test_stationarity(series: pd.Series):
     """ADF and KPSS tests for stationarity."""
     series = series.dropna()
@@ -26,5 +27,5 @@ def test_stationarity(series: pd.Series):
             "kpss_pvalue": kpss_p,
             "stationary": stationary
         }
-    except:
+    except Exception:  # noqa: BLE001
         return {"adf_stat": None, "adf_pvalue": None, "kpss_stat": None, "kpss_pvalue": None, "stationary": False}

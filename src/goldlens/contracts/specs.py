@@ -1,4 +1,5 @@
-from ..config import get_settings, ContractSpec
+from ..config import ContractSpec, get_settings
+
 
 def get_contract_spec(symbol: str) -> ContractSpec:
     settings = get_settings()

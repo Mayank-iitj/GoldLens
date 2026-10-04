@@ -1,6 +1,7 @@
+import logging
+
 from .gates import run_gates
 from .suppression_log import SuppressionLog
-import logging
 
 log = logging.getLogger(__name__)
 

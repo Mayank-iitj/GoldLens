@@ -1,7 +1,9 @@
 import pandas as pd
+
 from ..config import get_settings
 
-def rolling_zscore(spread_series: pd.Series, window: int = None) -> pd.Series:
+
+def rolling_zscore(spread_series: pd.Series, window: int | None = None) -> pd.Series:
     """Rolling zscore strictly lagged."""
     if window is None:
         window = get_settings().signal.z_window

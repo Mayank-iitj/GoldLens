@@ -1,5 +1,7 @@
 import pandas as pd
+
 from ..config import get_settings
+
 
 def normalize_prices(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize prices to INR per gram, 999 purity."""

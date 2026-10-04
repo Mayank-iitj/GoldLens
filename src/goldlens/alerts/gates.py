@@ -1,5 +1,6 @@
 from ..config import get_settings
 
+
 def run_gates(z: float, expected_reversion: float, est_costs: float, stationary: bool, half_life: float):
     """Evaluates if an alert should fire."""
     cfg = get_settings().signal

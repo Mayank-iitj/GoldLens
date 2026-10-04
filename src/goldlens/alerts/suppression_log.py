@@ -1,5 +1,7 @@
 import duckdb
+
 from ..config import get_settings
+
 
 class SuppressionLog:
     def __init__(self):

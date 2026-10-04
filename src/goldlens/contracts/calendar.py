@@ -1,6 +1,7 @@
-import pandas as pd
-from datetime import timedelta
 import logging
+from datetime import timedelta
+
+import pandas as pd
 
 log = logging.getLogger(__name__)
 
