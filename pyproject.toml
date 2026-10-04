@@ -39,3 +39,6 @@ line-length = 100
 
 [tool.pytest.ini_options]
 filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.mypy]
+ignore_missing_imports = true
