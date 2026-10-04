@@ -1,0 +1,31 @@
+# MCX and Broker costs as of Oct 2026
+# Sources: 
+# - https://www.mcxindia.com/market-operations/exchange-transaction-charges
+# - Published discount broker charges
+brokerage:
+  type: "flat" # flat or percent
+  rate: 20.0 # Rs per executed order
+
+exchange_txn_charge:
+  type: "percent"
+  rate: 0.000021 # 0.0021% on turnover
+
+ctt:
+  type: "percent"
+  rate: 0.0001 # 0.01% on sell side
+
+gst:
+  type: "percent"
+  rate: 0.18 # 18% on brokerage + exchange txn
+
+sebi_fee:
+  type: "percent"
+  rate: 0.000001 # Rs 10 per crore
+
+stamp_duty:
+  type: "percent"
+  rate: 0.00002 # 0.002% on buy side
+
+slippage:
+  k: 0.5 # Fraction of (High - Low)
+  thin_multiplier: 2.0 # Multiplier if volume/OI is thin

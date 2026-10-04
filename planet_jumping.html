@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GoldLens Explorer</title>
+<style>
+/* 2. FONTS */
+@font-face {
+  font-family: 'SF Pro';
+  src: local('SF Pro Display Regular'), local('SFProDisplay-Regular');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'SF Pro';
+  src: local('SF Pro Display Bold'), local('SFProDisplay-Bold');
+  font-weight: 700;
+}
+@font-face {
+  font-family: 'SF Pro Thin';
+  src: local('SF Pro Display Thin'), local('SFProDisplay-Thin');
+  font-weight: 100;
+}
+@font-face {
+  font-family: 'Aalto';
+  src: local('Aalto');
+  font-weight: 400;
+}
+
+:root {
+  font-family: 'SF Pro', Arial, sans-serif;
+  color: #fff;
+  background: #090807;
+  font-synthesis: none;
+}
+
+/* 5. LAYOUT CSS (exact values) */
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+.experience { position: relative; width: 100%; height: 100%; min-height: 540px; overflow: hidden; background: #0a0908; }
+.backgrounds, .background, .shade, .transition-layer, .transition-layer video { position: absolute; inset: 0; width: 100%; height: 100%; }
+.background { object-fit: cover; opacity: 0; transition: opacity .8s ease; }
+.background.is-visible { opacity: 1; }
+.shade { z-index: 1; background: linear-gradient(to bottom, transparent 52%, rgba(0,0,0,.88) 100%); pointer-events: none; }
+.chrome { position: absolute; z-index: 4; transition: opacity .45s ease, filter .45s ease; }
+.experience.is-transitioning .chrome { opacity: 0; filter: blur(8px); pointer-events: none; }
+
+/* HEADER */
+.header { left: clamp(18px,1.95vw,28px); right: clamp(18px,1.95vw,28px); top: clamp(18px,3.1vh,28px); display: flex; justify-content: space-between; align-items: center; }
+.header-actions { margin-left: auto; display: flex; align-items: center; }
+.nav { display: flex; align-items: center; height: 42px; padding: 4px 5px; border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.1); backdrop-filter: blur(12px); border-radius: 999px; }
+.nav a { color: #fff; text-decoration: none; padding: 8px 19px; border-radius: 999px; line-height: 1; }
+.nav a.active { background: #fff; color: #000; }
+.menu { height: 42px; padding: 0 20px; border: 0; border-radius: 999px; background: #fff; color: #000; cursor: pointer; }
+
+/* SIDEBAR */
+.planet-list { left: clamp(18px,1.95vw,28px); top: 50%; transform: translateY(-43%); display: flex; flex-direction: column; gap: 6px; font-size: 16px; }
+.planet-item { display: flex; align-items: center; min-height: 20px; }
+.planet-item.active { font-size: 18px; font-weight: 700; gap: 8px; }
+.planet-item.active:before { content: ''; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+
+/* PORTAL */
+.portal-wrap { left: 50%; top: 50%; width: min(320px,31vw); transform: translate(-50%,-54%); perspective: none; }
+.portal-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 16px; opacity: 0; }
+.portal-heading strong { font-size: 18px; margin-left: 8px; }
+.portal { position: relative; display: block; width: 100%; aspect-ratio: 320/350; padding: 0; overflow: visible; border: 0; border-radius: 90px; background: transparent; cursor: pointer; box-shadow: none; transform: none!important; }
+.portal video, .portal img { visibility: hidden; position: absolute; width: 1px; height: 1px; pointer-events: none; }
+.portal-canvas { position: fixed; inset: 0; z-index: 3; width: 100%; height: 100%; pointer-events: none; }
+
+/* CONTENT */
+.planet-content { left: clamp(28px,4vw,58px); right: clamp(28px,3vw,44px); bottom: clamp(24px,3vh,30px); display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
+/* Modified clamp slightly to accommodate the long string GOLDGUINEA */
+.planet-content h1 { font-family: Aalto, 'Arial Narrow', sans-serif; font-size: clamp(84px,14.5vw,220px); font-weight: 400; line-height: .72; margin: 0 0 -.04em; letter-spacing: 0; transform: translateX(-32px); opacity: 0; }
+.planet-content dl { width: min(447px,34vw); margin: 0; font-size: 16px; }
+.fact { display: grid; grid-template-columns: 138px 1fr; gap: 18px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.48); opacity: 0; }
+.fact:last-child { border-bottom: 0; }
+.fact dt { font-weight: 700; }
+.fact dd { margin: 0; }
+
+/* MISC */
+.transition-layer { display: none; }
+.scene-canvas { display: none; }
+.loading { position: absolute; z-index: 12; left: 50%; bottom: 30px; transform: translateX(-50%); opacity: 0; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; transition: opacity .2s; }
+.experience.is-loading .loading { opacity: .8; }
+.experience.is-transitioning .header, .experience.is-transitioning .planet-list { opacity: 1; filter: none; pointer-events: auto; }
+.experience.is-transitioning .shade { opacity: 1; }
+.experience.is-committing .background { transition: none!important; }
+
+/* 6. PRELOADER */
+.preloader { position: absolute; inset: 0; z-index: 20; background: #000; overflow: hidden; }
+.preloader video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.preloader-shade { position: absolute; inset: auto 0 0; height: 35%; background: linear-gradient(to bottom, transparent, #000); }
+.preloader.is-background { z-index: 0; }
+.preloader.is-background .preloader-shade { opacity: 0; }
+.floating-logo { position: fixed; z-index: 22; left: 50%; top: 50%; width: 59px; height: 58px; transform: translate(-50%,-50%); will-change: left, top, width, height, transform; transition: left 2s cubic-bezier(.16,1,.3,1), top 2s cubic-bezier(.16,1,.3,1), width 2s cubic-bezier(.16,1,.3,1), height 2s cubic-bezier(.16,1,.3,1), transform 2s cubic-bezier(.16,1,.3,1); }
+.floating-logo.is-docked { left: clamp(18px,1.95vw,28px); top: clamp(18px,3.1vh,28px); width: 37px; height: 36px; transform: none; }
+.floating-logo.is-settled { z-index: 5; }
+.preloader-count { position: fixed; z-index: 22; left: 50%; bottom: clamp(22px,3.1vh,28px); display: flex; align-items: flex-end; gap: 4px; transform: translateX(-50%); font-family: 'SF Pro', Arial, sans-serif; line-height: 1; }
+.preloader-count > span:first-child { font-family: 'SF Pro Thin', 'SF Pro', Arial, sans-serif; font-size: 64px; font-weight: 100; }
+.preloader-count .percent { font-size: 24px; padding-bottom: 4px; }
+.preloader-count.is-leaving { animation: preload-count-out .75s cubic-bezier(.22,1,.36,1) both; }
+@keyframes preload-count-out { to { opacity: 0; filter: blur(7px); transform: translate(-50%,-34px); } }
+body:not(.preload-complete) .custom-cursor { opacity: 0!important; }
+
+/* 9. CUSTOM CURSOR */
+html, body, button, a, .portal { cursor: none!important; }
+.custom-cursor { display: block; position: fixed; left: 0; top: 0; z-index: 100; width: 1px; height: 1px; pointer-events: none; opacity: 0; transition: opacity .2s ease; }
+.custom-cursor.is-visible { opacity: 1; }
+.cursor-dot, .cursor-orbit { position: absolute; left: 0; top: 0; border-radius: 50%; transform: translate(-50%,-50%); }
+.cursor-dot { width: 12px; height: 12px; background: #fff; }
+.cursor-orbit { width: 36px; height: 36px; border: 1px solid #fff; background: rgba(255,255,255,.4); transition: transform .3s cubic-bezier(.22,1,.36,1); }
+.custom-cursor.is-enter .cursor-orbit { transform: translate(-50%,-50%) scale(1.16); }
+.cursor-label { position: absolute; top: 26px; left: 0; transform: translateX(-50%) translateY(-4px); font: 16px/1.2 'SF Pro', Arial, sans-serif; white-space: nowrap; opacity: 0; transition: opacity .2s ease, transform .3s cubic-bezier(.22,1,.36,1); }
+.custom-cursor.is-enter .cursor-label { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* 10. ENTRANCE / SWITCH ANIMATIONS */
+body:not(.intro-ready) .header,
+body:not(.intro-ready) .planet-list,
+body:not(.intro-ready) .planet-content h1,
+body:not(.intro-ready) .planet-content .fact { opacity: 0; }
+.intro-ready .header { animation: reveal-down .9s cubic-bezier(.22,1,.36,1) .1s both; }
+.intro-ready .planet-list { animation: reveal-side .9s cubic-bezier(.22,1,.36,1) .65s both; }
+.content-revealing h1 { animation: title-rise 1.05s cubic-bezier(.16,1,.3,1) both; }
+.content-revealing .fact:nth-child(1) { animation: fact-rise .72s cubic-bezier(.22,1,.36,1) .52s both; }
+.content-revealing .fact:nth-child(2) { animation: fact-rise .72s cubic-bezier(.22,1,.36,1) .68s both; }
+.content-revealing .fact:nth-child(3) { animation: fact-rise .72s cubic-bezier(.22,1,.36,1) .84s both; }
+.content-revealing .fact:nth-child(4) { animation: fact-rise .72s cubic-bezier(.22,1,.36,1) 1s both; }
+.mask-revealing .portal-heading { animation: portal-caption .85s cubic-bezier(.22,1,.36,1) both; }
+.planet-list.is-switching .planet-item:nth-child(1) { animation: menu-row .58s cubic-bezier(.22,1,.36,1) .02s both; }
+.planet-list.is-switching .planet-item:nth-child(2) { animation: menu-row .58s cubic-bezier(.22,1,.36,1) .05s both; }
+.planet-list.is-switching .planet-item:nth-child(3) { animation: menu-row .58s cubic-bezier(.22,1,.36,1) .08s both; }
+.planet-list.is-switching .planet-item:nth-child(4) { animation: menu-row .58s cubic-bezier(.22,1,.36,1) .11s both; }
+.planet-list.is-switching .planet-item:nth-child(5) { animation: menu-row .58s cubic-bezier(.22,1,.36,1) .14s both; }
+.planet-list.is-switching .planet-item:nth-child(6) { animation: menu-row .58s cubic-bezier(.22,1,.36,1) .17s both; }
+.planet-list.is-switching .planet-item:nth-child(7) { animation: menu-row .58s cubic-bezier(.22,1,.36,1) .20s both; }
+.planet-list.is-switching .planet-item:nth-child(8) { animation: menu-row .58s cubic-bezier(.22,1,.36,1) .23s both; }
+.planet-list.is-switching .planet-item.active:before { animation: active-dot .55s cubic-bezier(.22,1,.36,1) .18s both; }
+
+@keyframes reveal-down { from { opacity: 0; filter: blur(8px); transform: translateY(-18px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+@keyframes reveal-side { from { opacity: 0; filter: blur(8px); transform: translate(-20px,-43%); } to { opacity: 1; filter: blur(0); transform: translate(0,-43%); } }
+@keyframes title-rise { from { opacity: 0; filter: blur(12px); transform: translate(-32px,42px); } to { opacity: 1; filter: blur(0); transform: translate(-32px,0); } }
+@keyframes fact-rise { from { opacity: 0; filter: blur(7px); transform: translateY(18px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+@keyframes portal-caption { from { opacity: 0; filter: blur(7px); transform: translateY(22px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+@keyframes menu-row { from { opacity: .35; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes active-dot { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+
+/* 11. RESPONSIVE */
+@media(max-width:900px) {
+  .nav { display: none; }
+  .portal-wrap { width: min(300px,48vw); }
+  .planet-content h1 { font-size: clamp(68px,15vw,160px); }
+  .planet-content dl { width: 43vw; }
+  .fact { grid-template-columns: 110px 1fr; }
+  .planet-list { font-size: 14px; }
+  .planet-item.active { font-size: 16px; }
+}
+@media(max-width:640px) {
+  .experience { min-height: 600px; }
+  .planet-list { display: none; }
+  .portal-wrap { top: 44%; width: min(260px,66vw); }
+  .planet-content { left: 18px; right: 18px; bottom: 18px; display: block; }
+  .planet-content h1 { font-size: clamp(52px,16vw,120px); margin-bottom: 20px; }
+  .planet-content dl { width: 100%; font-size: 13px; }
+  .fact { grid-template-columns: 92px 1fr; padding: 5px 0; }
+  .portal-heading { font-size: 14px; }
+  .portal-heading strong { font-size: 16px; }
+  .menu { height: 38px; }
+  .portal { border-radius: 70px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  * { transition-duration: .01ms!important; }
+  .portal { transform: none!important; }
+}
+</style>
+</head>
+<body>
+
+<main class="experience" data-planet="goldm">
+  <div class="backgrounds" aria-hidden="true">
+    <video id="goldm-background" class="background is-visible" src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/3c83091e-4046-4fd6-adbb-2edb728be79a.mp4" muted playsinline preload="auto"></video>
+    <video id="goldten-background" class="background" src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/fc3ded42-e845-41f3-a830-5cab512d79cd.mp4" muted playsinline preload="auto"></video>
+    <video id="goldguinea-background" class="background" src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/b30f64d9-1637-477a-83df-d0fc6461a422.mp4" muted playsinline preload="auto"></video>
+  </div>
+  <div class="preloader" id="preloader" aria-label="Loading GoldLens">
+    <video id="preloader-video" src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/5fc5651c-3b5d-4171-b507-87f7e635d1b4.mp4" muted playsinline preload="auto"></video>
+    <div class="preloader-shade"></div>
+  </div>
+  <img class="floating-logo" id="floating-logo" src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/eb7e0f53-50cd-4af5-abc4-8b9a52cdc01b.svg" alt="GoldLens">
+  <div class="preloader-count" id="preloader-count" aria-live="polite">
+    <span id="preloader-value">0</span><span class="percent">%</span>
+  </div>
+  <canvas id="scene-canvas" class="scene-canvas" aria-hidden="true"></canvas>
+  <div class="shade" aria-hidden="true"></div>
+
+  <header class="header chrome">
+    <div class="header-actions">
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="active" href="#about">About</a><a href="#explore">Explore</a><a href="#contracts">Contracts</a>
+      </nav>
+      <button class="menu" type="button" onclick="window.location.href='http://localhost:8501'">Launch Terminal</button>
+    </div>
+  </header>
+
+  <aside class="planet-list chrome" aria-label="Contracts"></aside>
+
+  <canvas id="portal-canvas" class="portal-canvas" aria-hidden="true"></canvas>
+  <section class="portal-wrap chrome" aria-label="Next destination">
+    <div class="portal-heading">
+      <span>Next:</span>
+      <span><span id="next-number">[02]</span> <strong id="next-name">GOLDTEN</strong></span>
+    </div>
+    <button class="portal" id="portal" type="button" aria-label="Travel to GOLDTEN">
+      <video id="portal-video" src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/fc3ded42-e845-41f3-a830-5cab512d79cd.mp4" muted playsinline preload="auto"></video>
+      <img id="portal-image" src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/d6fb8b6b-c15e-4aaa-9cf7-45bbb5e33372.jpg" alt="GOLDPETAL">
+    </button>
+  </section>
+
+  <section class="planet-content chrome" aria-live="polite">
+    <h1 id="planet-title">GOLDM</h1>
+    <dl id="facts"></dl>
+  </section>
+
+  <div class="transition-layer" aria-hidden="true">
+    <video id="transition-video" muted playsinline preload="auto"></video>
+  </div>
+  <div class="loading" aria-hidden="true">Preparing data orbit…</div>
+  <div class="custom-cursor" id="custom-cursor" aria-hidden="true">
+    <span class="cursor-orbit"></span><span class="cursor-dot"></span><span class="cursor-label">Enter</span>
+  </div>
+</main>
+
+<script>
+const BASE = 'https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P';
+const MARS_BG = `${BASE}/3c83091e-4046-4fd6-adbb-2edb728be79a.mp4`;
+const TO_EARTH = `${BASE}/fc3ded42-e845-41f3-a830-5cab512d79cd.mp4`;
+const TO_VENUS = `${BASE}/b30f64d9-1637-477a-83df-d0fc6461a422.mp4`;
+const TO_MARS = `${BASE}/5fc5651c-3b5d-4171-b507-87f7e635d1b4.mp4`;
+const MERCURY = `${BASE}/d6fb8b6b-c15e-4aaa-9cf7-45bbb5e33372.jpg`;
+
+const planetsList = ['GOLDM','GOLDTEN','GOLDGUINEA','GOLDPETAL','SILVER','SILVERM','COPPER','ZINC'];
+
+const states = {
+  goldm: { 
+    name: 'GOLDM', next: 'goldten', number: '[02]', portal: TO_EARTH, background: 'goldm-background',
+    facts: [
+      ['Lot Size:', '100 grams (10 base units).'],
+      ['Purity:', '995 purity standard.'],
+      ['Expiry:', '3rd to 5th of the expiry month.'],
+      ['Role:', 'The primary institutional benchmark contract for MCX Gold.']
+    ] 
+  },
+  goldten: { 
+    name: 'GOLDTEN', next: 'goldguinea', number: '[03]', portal: TO_VENUS, background: 'goldten-background',
+    facts: [
+      ['Lot Size:', '100 grams (10 base units).'],
+      ['Purity:', '999 high purity standard.'],
+      ['Expiry:', '27th to 31st of the expiry month.'],
+      ['Role:', 'Maturity mis-matched alternative with superior purity.']
+    ] 
+  },
+  goldguinea: { 
+    name: 'GOLDGUINEA', next: 'goldpetal', number: '[04]', image: MERCURY, background: 'goldguinea-background',
+    facts: [
+      ['Lot Size:', '8 grams.'],
+      ['Purity:', '999 purity standard.'],
+      ['Expiry:', '27th to 31st of the expiry month.'],
+      ['Role:', 'Retail-sized contract with structurally higher bid-ask spread.']
+    ] 
+  }
+};
+
+let current = 'goldm';
+let busy = false;
+let expansion = 0;
+let maskScale = 1;
+let canvasOpacity = 1;
+let transitionActive = false;
+let rotX = 0, rotY = 0;
+let targetX = 0, targetY = 0;
+let hasFrozenScene = false;
+let lastTime = 0;
+
+const el = id => document.getElementById(id);
+const experience = document.querySelector('.experience');
+const planetTitle = el('planet-title');
+const nextName = el('next-name');
+const nextNumber = el('next-number');
+const factsDl = el('facts');
+const planetListEl = document.querySelector('.planet-list');
+const portalBtn = el('portal');
+const portalImage = el('portal-image');
+const portalVideo = el('portal-video');
+const transitionVideo = el('transition-video');
+const portalCanvas = el('portal-canvas');
+const pCtx = portalCanvas.getContext('2d');
+const sceneCanvas = el('scene-canvas');
+const sCtx = sceneCanvas.getContext('2d');
+const customCursor = el('custom-cursor');
+
+const easing = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+function animateValue(setter, duration) {
+  return new Promise(resolve => {
+    const start = performance.now();
+    function step(now) {
+      let t = (now - start) / duration;
+      if (t >= 1) { setter(1); resolve(); }
+      else { setter(easing(t)); requestAnimationFrame(step); }
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+function render() {
+  const state = states[current];
+  experience.setAttribute('data-planet', current);
+  planetTitle.textContent = state.name.toUpperCase();
+  
+  if (states[state.next]) {
+    nextName.textContent = states[state.next].name;
+    nextNumber.textContent = states[state.next].number;
+    portalBtn.setAttribute('aria-label', `Travel to ${states[state.next].name}`);
+  } else if (state.image) {
+    nextName.textContent = 'GOLDPETAL';
+    nextNumber.textContent = '[04]';
+    portalBtn.setAttribute('aria-label', `Travel to GOLDPETAL`);
+  }
+
+  // Facts
+  factsDl.innerHTML = '';
+  state.facts.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'fact';
+    div.innerHTML = `<dt>${f[0]}</dt><dd>${f[1]}</dd>`;
+    factsDl.appendChild(div);
+  });
+
+  // Planet list
+  const wasSwitching = planetListEl.classList.contains('is-switching');
+  planetListEl.innerHTML = '';
+  planetsList.forEach(p => {
+    const span = document.createElement('span');
+    span.className = 'planet-item' + (p.toLowerCase() === state.name.toLowerCase() ? ' active' : '');
+    span.textContent = p;
+    planetListEl.appendChild(span);
+  });
+  if (current !== 'goldm' || wasSwitching) {
+    planetListEl.classList.remove('is-switching');
+    void planetListEl.offsetWidth; 
+    planetListEl.classList.add('is-switching');
+  }
+
+  // Backgrounds
+  document.querySelectorAll('.background').forEach(bg => {
+    if (bg.id === state.background) bg.classList.add('is-visible');
+    else bg.classList.remove('is-visible');
+  });
+
+  // Portal media
+  if (state.image) {
+    portalImage.style.visibility = 'visible';
+    portalVideo.style.visibility = 'hidden';
+  } else {
+    portalImage.style.visibility = 'hidden';
+    portalVideo.style.visibility = 'visible';
+    if (!portalVideo.src.endsWith(state.portal)) {
+      portalVideo.src = state.portal;
+      portalVideo.load();
+    }
+  }
+}
+
+function resizeCanvas() {
+  const d = Math.min(window.devicePixelRatio || 1, 2);
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  portalCanvas.width = w * d;
+  portalCanvas.height = h * d;
+  portalCanvas.style.width = w + 'px';
+  portalCanvas.style.height = h + 'px';
+  pCtx.setTransform(d, 0, 0, d, 0, 0);
+  
+  if (!hasFrozenScene) {
+    sceneCanvas.width = w * d;
+    sceneCanvas.height = h * d;
+    sceneCanvas.style.width = w + 'px';
+    sceneCanvas.style.height = h + 'px';
+    sCtx.setTransform(d, 0, 0, d, 0, 0);
+  }
+}
+window.addEventListener('resize', resizeCanvas);
+
+function drawCover(ctx, media, cw, ch) {
+  if (!media) return;
+  const mw = media.videoWidth || media.naturalWidth || 0;
+  const mh = media.videoHeight || media.naturalHeight || 0;
+  if (mw === 0 || mh === 0) return;
+  const scale = Math.max(cw / mw, ch / mh);
+  const w = mw * scale;
+  const h = mh * scale;
+  ctx.drawImage(media, (cw - w) / 2, (ch - h) / 2, w, h);
+}
+
+function drawShade(ctx, cw, ch) {
+  const grad = ctx.createLinearGradient(0, ch * 0.52, 0, ch);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(1, 'rgba(0,0,0,0.88)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, ch * 0.52, cw, ch * 0.48);
+}
+
+function draw(time) {
+  requestAnimationFrame(draw);
+  if (!lastTime) lastTime = time;
+  const dt = Math.min(time - lastTime, 40);
+  lastTime = time;
+
+  if (!busy) {
+    rotX += (targetX - rotX) * Math.min(1, dt * 0.009);
+    rotY += (targetY - rotY) * Math.min(1, dt * 0.009);
+  }
+
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  
+  pCtx.clearRect(0, 0, w, h);
+  
+  if (hasFrozenScene) {
+    pCtx.drawImage(sceneCanvas, 0, 0, w, h);
+    drawShade(pCtx, w, h);
+  }
+
+  const rect = portalBtn.getBoundingClientRect();
+  const e = expansion;
+  const rectCx = rect.left + rect.width / 2;
+  const rectCy = rect.top + rect.height / 2;
+  
+  const cx = rectCx + (w / 2 - rectCx) * e;
+  const cy = rectCy + (h / 2 - rectCy) * e;
+  
+  const baseW = rect.width + (w - rect.width) * e;
+  const baseH = rect.height + (h - rect.height) * e;
+  
+  const scale = e ? 1 : maskScale;
+  const maskW = baseW * scale;
+  const maskH = baseH * scale;
+  
+  const r = 90 * (1 - e) * scale;
+  const rx = rotX * (1 - e);
+  const ry = rotY * (1 - e);
+  
+  if (maskW > 1 && maskH > 1) {
+    pCtx.save();
+    pCtx.globalAlpha = canvasOpacity;
+    
+    // Build rounded rect path with ~44 points
+    const pts = [];
+    const cr = Math.min(r, maskW / 2, maskH / 2);
+    
+    const arcs = [
+      { cx: maskW/2 - cr, cy: -maskH/2 + cr, start: -Math.PI/2, end: 0 },
+      { cx: maskW/2 - cr, cy: maskH/2 - cr, start: 0, end: Math.PI/2 },
+      { cx: -maskW/2 + cr, cy: maskH/2 - cr, start: Math.PI/2, end: Math.PI },
+      { cx: -maskW/2 + cr, cy: -maskH/2 + cr, start: Math.PI, end: Math.PI*1.5 }
+    ];
+    
+    arcs.forEach(arc => {
+      for (let i = 0; i <= 10; i++) {
+        const angle = arc.start + (arc.end - arc.start) * (i / 10);
+        const lx = arc.cx + cr * Math.cos(angle);
+        const ly = arc.cy + cr * Math.sin(angle);
+        pts.push({ x: lx, y: ly });
+      }
+    });
+
+    const ax = rx * Math.PI / 180;
+    const ay = ry * Math.PI / 180;
+    const focal = 850;
+    
+    pCtx.beginPath();
+    pts.forEach((pt, i) => {
+      const xx = pt.x * Math.cos(ay);
+      const yy = pt.y * Math.cos(ax);
+      const z = pt.x * Math.sin(ay) - pt.y * Math.sin(ax);
+      const p = focal / (focal + z);
+      const screenX = cx + xx * p;
+      const screenY = cy + yy * p;
+      if (i === 0) pCtx.moveTo(screenX, screenY);
+      else pCtx.lineTo(screenX, screenY);
+    });
+    pCtx.closePath();
+    
+    pCtx.clip();
+    pCtx.fillStyle = '#030303';
+    pCtx.fillRect(0, 0, w, h);
+    
+    const media = transitionActive ? transitionVideo : (states[current].image ? portalImage : portalVideo);
+    drawCover(pCtx, media, w, h);
+    if (transitionActive) drawShade(pCtx, w, h);
+    pCtx.restore();
+  }
+}
+
+window.addEventListener('pointermove', e => {
+  if (busy) return;
+  targetY = (e.clientX / window.innerWidth - 0.5) * 37.4;
+  targetX = (e.clientY / window.innerHeight - 0.5) * -33;
+});
+window.addEventListener('pointerleave', () => {
+  if (!busy) { targetX = 0; targetY = 0; }
+});
+
+async function revealMask() {
+  experience.classList.remove('mask-revealing');
+  void experience.offsetWidth;
+  experience.classList.add('mask-revealing');
+  maskScale = 0;
+  await animateValue(v => maskScale = v, 1050);
+}
+
+function revealPlanetContent() {
+  experience.classList.remove('content-revealing');
+  void experience.offsetWidth;
+  experience.classList.add('content-revealing');
+}
+
+async function travel() {
+  if (busy || current === 'goldguinea') return;
+  busy = true;
+  targetX = 0; targetY = 0;
+  const next = states[current].next;
+  
+  try {
+    transitionVideo.src = states[current].portal;
+    transitionVideo.load();
+    experience.classList.add('is-loading');
+    
+    await new Promise((resolve, reject) => {
+      let done = false;
+      const finish = () => { if(!done) { done=true; resolve(); }};
+      transitionVideo.oncanplaythrough = finish;
+      transitionVideo.onerror = reject;
+      setTimeout(finish, 1600);
+    });
+    
+    experience.classList.remove('is-loading', 'content-revealing', 'mask-revealing');
+    experience.classList.add('is-transitioning');
+    
+    transitionVideo.currentTime = 0;
+    transitionVideo.playbackRate = 1.3;
+    canvasOpacity = 1;
+    transitionActive = true;
+    
+    const playProm = transitionVideo.play();
+    if (playProm !== undefined) await playProm;
+    
+    await animateValue(v => expansion = v, 1100);
+    
+    await new Promise(resolve => {
+      if (transitionVideo.ended) resolve();
+      else transitionVideo.onended = resolve;
+    });
+    
+    sceneCanvas.width = window.innerWidth * Math.min(window.devicePixelRatio||1, 2);
+    sceneCanvas.height = window.innerHeight * Math.min(window.devicePixelRatio||1, 2);
+    sCtx.clearRect(0, 0, sceneCanvas.width, sceneCanvas.height);
+    drawCover(sCtx, transitionVideo, window.innerWidth, window.innerHeight);
+    hasFrozenScene = true;
+    
+    current = next;
+    experience.classList.add('is-committing');
+    render();
+    
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    
+    transitionActive = false;
+    expansion = 0;
+    maskScale = 0;
+    canvasOpacity = 1;
+    experience.classList.remove('is-transitioning', 'is-committing');
+    hasFrozenScene = false;
+    
+    const maskProm = revealMask();
+    setTimeout(revealPlanetContent, 100);
+    await maskProm;
+    
+    setTimeout(() => {
+      transitionVideo.removeAttribute('src');
+      transitionVideo.load();
+      busy = false;
+    }, 450);
+    
+  } catch(e) {
+    console.error(e);
+    transitionActive = false;
+    expansion = 0;
+    maskScale = 1;
+    canvasOpacity = 1;
+    experience.classList.remove('is-loading', 'is-transitioning', 'is-committing');
+    busy = false;
+  }
+}
+
+portalBtn.addEventListener('click', travel);
+
+// Preloader
+const pVideo = el('preloader-video');
+const pCount = el('preloader-count');
+const pValue = el('preloader-value');
+const fLogo = el('floating-logo');
+const preloader = el('preloader');
+
+function runPreloader() {
+  const finish = () => {
+    pValue.textContent = '100';
+    pCount.classList.add('is-leaving');
+    fLogo.classList.add('is-docked');
+    preloader.classList.add('is-background');
+    document.body.classList.add('preload-complete');
+    startExperience();
+    setTimeout(() => pCount.remove(), 750);
+    setTimeout(() => fLogo.classList.add('is-settled'), 2000);
+  };
+  
+  if (pVideo.readyState >= 1) {
+    pVideo.playbackRate = Math.max(0.25, pVideo.duration / 3);
+    pVideo.play().catch(finish);
+    
+    const update = () => {
+      if (!pVideo.ended && !pCount.classList.contains('is-leaving')) {
+        pValue.textContent = Math.round((pVideo.currentTime / pVideo.duration) * 100) || 0;
+        requestAnimationFrame(update);
+      }
+    };
+    requestAnimationFrame(update);
+    pVideo.onended = finish;
+  } else {
+    pVideo.onloadedmetadata = () => {
+      pVideo.playbackRate = Math.max(0.25, pVideo.duration / 3);
+      pVideo.play().catch(finish);
+      const update = () => {
+        if (!pVideo.ended && !pCount.classList.contains('is-leaving')) {
+          pValue.textContent = Math.round((pVideo.currentTime / pVideo.duration) * 100) || 0;
+          requestAnimationFrame(update);
+        }
+      };
+      requestAnimationFrame(update);
+    };
+    pVideo.onerror = finish;
+    setTimeout(finish, 3500); // fallback
+  }
+}
+
+async function startExperience() {
+  await new Promise(resolve => {
+    if (portalVideo.readyState >= 3) resolve();
+    else {
+      portalVideo.oncanplay = resolve;
+      setTimeout(resolve, 1000);
+    }
+  });
+  await revealMask();
+  document.body.classList.add('intro-ready');
+  setTimeout(revealPlanetContent, 850);
+}
+
+// Custom Cursor
+let curX = 0, curY = 0, aimX = 0, aimY = 0;
+let cursorVisible = false;
+window.addEventListener('mousemove', e => {
+  aimX = e.clientX; aimY = e.clientY;
+  if (!cursorVisible && document.body.classList.contains('preload-complete')) {
+    customCursor.classList.add('is-visible');
+    cursorVisible = true;
+    curX = aimX; curY = aimY;
+  }
+});
+document.addEventListener('mouseleave', () => {
+  customCursor.classList.remove('is-visible');
+  cursorVisible = false;
+});
+portalBtn.addEventListener('mouseenter', () => customCursor.classList.add('is-enter'));
+portalBtn.addEventListener('mouseleave', () => customCursor.classList.remove('is-enter'));
+
+function cursorLoop() {
+  curX += (aimX - curX) * 0.2;
+  curY += (aimY - curY) * 0.2;
+  customCursor.style.transform = `translate3d(${curX}px, ${curY}px, 0)`;
+  requestAnimationFrame(cursorLoop);
+}
+
+// Boot Order
+document.querySelectorAll('.background').forEach(v => {
+  v.pause(); v.currentTime = 0;
+});
+resizeCanvas();
+render();
+requestAnimationFrame(draw);
+requestAnimationFrame(cursorLoop);
+runPreloader();
+
+</script>
+</body>
+</html>

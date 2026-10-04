@@ -1,0 +1,43 @@
+database:
+  path: "data/goldlens.duckdb"
+
+contracts:
+  GOLDM:
+    lot_size: 10
+    base_unit: 10
+    purity: 995
+    expiry_window: "3rd-5th"
+  GOLDTEN:
+    lot_size: 10
+    base_unit: 10
+    purity: 999
+    expiry_window: "27th-31st"
+  GOLDGUINEA:
+    lot_size: 1
+    base_unit: 8
+    purity: 999
+    expiry_window: "27th-31st"
+  GOLDPETAL:
+    lot_size: 1
+    base_unit: 1
+    purity: 999
+    expiry_window: "27th-31st"
+
+splits:
+  train_end: "2023-12-31"
+  val_end: "2024-12-31"
+
+signal:
+  z_window: 60
+  z_entry: 2.0
+  z_exit: 0.0
+  z_stop: 4.0
+  half_life_max: 30
+
+backtest:
+  execution_delay: 1 # Execute at t+1 settlement
+  roll_buffer_days: 5 # Must exit 5 days before tender period starts
+
+verdict:
+  min_deflated_sharpe: 1.0
+  max_beta: 0.1
